@@ -17,10 +17,10 @@ import time
 
 app = Flask(__name__)
 
-# Configuración - Usar variables de Railway
-MODEL_PATH = os.environ.get('MODEL_PATH', 'modelo_entrenado/chaleco_detection/weights/best.pt')
-CONFIDENCE_THRESHOLD = float(os.environ.get('CONFIDENCE_THRESHOLD', '0.5'))
-IOU_THRESHOLD = float(os.environ.get('IOU_THRESHOLD', '0.45'))
+# Configuración
+MODEL_PATH = "modelo_entrenado/chaleco_detection/weights/best.pt"
+CONFIDENCE_THRESHOLD = 0.5
+IOU_THRESHOLD = 0.45
 
 # Variables globales
 model = None
@@ -70,11 +70,8 @@ def preprocess_image(image_data):
 def detect_chalecos(image_np):
     """Detectar chalecos en la imagen"""
     try:
-        # Cargar modelo si no está cargado
         if model is None:
-            print("Cargando modelo para detección...")
-            if not load_model():
-                return [], "Error: No se pudo cargar el modelo"
+            return [], "Modelo cargando... Por favor espera unos segundos."
         
         # Realizar detección
         results = model(image_np, conf=CONFIDENCE_THRESHOLD, iou=IOU_THRESHOLD)
@@ -158,20 +155,6 @@ def ping():
     """Endpoint simple de ping para healthcheck"""
     return "pong", 200
 
-@app.route('/test')
-def test():
-    """Endpoint de test simple"""
-    return jsonify({
-        'status': 'working',
-        'message': 'Aplicación funcionando correctamente',
-        'timestamp': time.time(),
-        'variables': {
-            'port': os.environ.get('PORT', '5000'),
-            'model_path': MODEL_PATH,
-            'confidence_threshold': CONFIDENCE_THRESHOLD
-        }
-    }), 200
-
 @app.route('/status')
 def status():
     """Endpoint para verificar estado del modelo"""
@@ -205,17 +188,28 @@ def model_info():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Iniciar aplicación
+# Iniciar aplicación sin bloquear por el modelo
 print("Iniciando aplicación...")
-print(f"🔧 Configuración:")
-print(f"   MODEL_PATH: {MODEL_PATH}")
-print(f"   CONFIDENCE_THRESHOLD: {CONFIDENCE_THRESHOLD}")
-print(f"   IOU_THRESHOLD: {IOU_THRESHOLD}")
-print(f"   PORT: {os.environ.get('PORT', '5000')}")
 
-print("Aplicación iniciada - Lista para recibir requests")
+# Cargar modelo en background
+def load_model_async():
+    """Cargar modelo de forma asíncrona"""
+    import threading
+    def load():
+        if load_model():
+            print("✅ Modelo cargado exitosamente")
+        else:
+            print("❌ Error: No se pudo cargar el modelo")
+    
+    thread = threading.Thread(target=load)
+    thread.daemon = True
+    thread.start()
+
+# Cargar modelo en background
+load_model_async()
+
+print("Aplicación iniciada - Modelo cargando en background")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    print(f"Iniciando servidor en puerto {port}")
     app.run(host='0.0.0.0', port=port, debug=False)

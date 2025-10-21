@@ -25,6 +25,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY . .
 
+# Ensure model directory exists and copy model files
+RUN mkdir -p modelo_entrenado/chaleco_detection/weights
+
 # Expose port
 EXPOSE 8080
 

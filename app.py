@@ -150,6 +150,14 @@ def index():
     except Exception as e:
         return f"Error loading template: {str(e)}", 500
 
+@app.route('/camera')
+def camera():
+    """Página de cámara con detección de chalecos"""
+    try:
+        return render_template('camera.html')
+    except Exception as e:
+        return f"Error loading camera template: {str(e)}", 500
+
 @app.route('/ping')
 def ping():
     """Endpoint simple de ping para healthcheck"""

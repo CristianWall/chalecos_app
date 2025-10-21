@@ -160,13 +160,13 @@ def model_info():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Cargar modelo al iniciar la aplicación
+print("Iniciando aplicación...")
+if load_model():
+    print("Aplicación lista!")
+else:
+    print("Error: No se pudo cargar el modelo")
+
 if __name__ == '__main__':
-    # Cargar modelo al iniciar
-    print("Iniciando aplicación...")
-    if load_model():
-        print("Aplicación lista!")
-        port = int(os.environ.get('PORT', 5000))
-        app.run(host='0.0.0.0', port=port, debug=False)
-    else:
-        print("Error: No se pudo cargar el modelo")
-        exit(1)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)

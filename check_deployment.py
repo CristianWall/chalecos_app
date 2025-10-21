@@ -29,10 +29,8 @@ def check_deployment():
     files_to_check = [
         ("app.py", "Aplicación Flask principal"),
         ("requirements.txt", "Dependencias Python"),
-        ("runtime.txt", "Versión de Python"),
-        ("Procfile", "Comando de inicio"),
+        ("Dockerfile", "Configuración Docker"),
         ("railway.json", "Configuración Railway"),
-        ("nixpacks.toml", "Configuración de build"),
         ("README.md", "Documentación"),
         ("templates/index.html", "Interfaz web"),
         ("modelo_entrenado/chaleco_detection/weights/best.pt", "Modelo YOLO")

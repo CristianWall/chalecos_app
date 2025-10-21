@@ -60,7 +60,7 @@ git push -u origin main
    - Haz clic en "New Project"
    - Selecciona "Deploy from GitHub repo"
    - Conecta tu repositorio de GitHub
-   - Railway detectará automáticamente la configuración
+   - Railway usará el Dockerfile para construir la aplicación
 
 3. **Configurar variables de entorno (opcional):**
 ```env

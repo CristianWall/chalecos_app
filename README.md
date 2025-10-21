@@ -52,6 +52,7 @@ git push heroku main
 
 - ✅ Detección en tiempo real con cámara web
 - ✅ Modelo YOLO entrenado para chalecos
+- ✅ Solo YOLO + PIL (sin OpenCV)
 - ✅ Interfaz simple y fácil de usar
 - ✅ Contador de chalecos detectados
 - ✅ Despliegue fácil en la nube

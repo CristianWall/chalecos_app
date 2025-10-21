@@ -1,6 +1,4 @@
 from flask import Flask, render_template, request, jsonify
-import cv2
-import numpy as np
 import base64
 from ultralytics import YOLO
 import os
@@ -31,16 +29,20 @@ def detect():
         image_bytes = base64.b64decode(image_data)
         image = Image.open(io.BytesIO(image_bytes))
         
-        # Convertir a OpenCV
-        opencv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        # Convertir a RGB si es necesario
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
         
-        # Detectar chalecos
-        results = model(opencv_image, conf=0.5)
+        # Detectar chalecos con YOLO
+        results = model(image, conf=0.5)
+        
+        # Obtener imagen con detecciones
         annotated_image = results[0].plot()
         
         # Convertir resultado a base64
-        _, buffer = cv2.imencode('.jpg', annotated_image)
-        annotated_base64 = base64.b64encode(buffer).decode('utf-8')
+        img_buffer = io.BytesIO()
+        annotated_image.save(img_buffer, format='JPEG', quality=85)
+        annotated_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
         
         # Contar detecciones
         count = len(results[0].boxes) if results[0].boxes is not None else 0

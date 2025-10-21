@@ -33,11 +33,20 @@ def load_model():
         with model_lock:
             if model is None:
                 print("Cargando modelo YOLO...")
+                if not os.path.exists(MODEL_PATH):
+                    print(f"Error: Modelo no encontrado en {MODEL_PATH}")
+                    return False
+                
                 model = YOLO(MODEL_PATH)
                 print(f"Modelo cargado exitosamente: {MODEL_PATH}")
+                
+                # Verificar que el modelo funciona
+                test_result = model.predict("https://ultralytics.com/images/bus.jpg", verbose=False)
+                print("Modelo verificado y funcionando")
         return True
     except Exception as e:
         print(f"Error cargando modelo: {e}")
+        model = None
         return False
 
 def preprocess_image(image_data):
@@ -138,18 +147,13 @@ def detect():
 def health():
     """Endpoint de salud para Railway"""
     try:
-        model_status = "loaded" if model is not None else "not_loaded"
-        return jsonify({
-            'status': 'healthy',
-            'model_status': model_status,
-            'timestamp': time.time()
-        }), 200
+        # Verificar que la aplicación está funcionando
+        if model is not None:
+            return "OK", 200
+        else:
+            return "Model not loaded", 503
     except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e),
-            'timestamp': time.time()
-        }), 500
+        return f"Error: {str(e)}", 500
 
 @app.route('/')
 def index():

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Aplicación Flask para detección de chalecos de seguridad en tiempo real
 Desplegable en Heroku con acceso público

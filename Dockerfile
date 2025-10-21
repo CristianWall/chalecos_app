@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install setuptools first
+RUN pip install --upgrade pip setuptools wheel
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 

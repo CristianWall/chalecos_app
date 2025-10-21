@@ -70,8 +70,11 @@ def preprocess_image(image_data):
 def detect_chalecos(image_np):
     """Detectar chalecos en la imagen"""
     try:
+        # Cargar modelo si no está cargado
         if model is None:
-            return [], "Modelo cargando... Por favor espera unos segundos."
+            print("Cargando modelo para detección...")
+            if not load_model():
+                return [], "Error: No se pudo cargar el modelo"
         
         # Realizar detección
         results = model(image_np, conf=CONFIDENCE_THRESHOLD, iou=IOU_THRESHOLD)
@@ -139,22 +142,8 @@ def detect():
 
 @app.route('/health')
 def health():
-    """Endpoint de salud para Railway"""
-    try:
-        # Verificar que la aplicación está funcionando
-        return jsonify({
-            'status': 'healthy',
-            'timestamp': time.time(),
-            'model_loaded': model is not None,
-            'port': os.environ.get('PORT', '5000'),
-            'model_path': MODEL_PATH
-        }), 200
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e),
-            'timestamp': time.time()
-        }), 500
+    """Endpoint de salud para Railway - Simplificado"""
+    return "OK", 200
 
 @app.route('/')
 def index():
@@ -168,6 +157,20 @@ def index():
 def ping():
     """Endpoint simple de ping para healthcheck"""
     return "pong", 200
+
+@app.route('/test')
+def test():
+    """Endpoint de test simple"""
+    return jsonify({
+        'status': 'working',
+        'message': 'Aplicación funcionando correctamente',
+        'timestamp': time.time(),
+        'variables': {
+            'port': os.environ.get('PORT', '5000'),
+            'model_path': MODEL_PATH,
+            'confidence_threshold': CONFIDENCE_THRESHOLD
+        }
+    }), 200
 
 @app.route('/status')
 def status():
@@ -202,7 +205,7 @@ def model_info():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Iniciar aplicación sin bloquear por el modelo
+# Iniciar aplicación
 print("Iniciando aplicación...")
 print(f"🔧 Configuración:")
 print(f"   MODEL_PATH: {MODEL_PATH}")
@@ -210,24 +213,7 @@ print(f"   CONFIDENCE_THRESHOLD: {CONFIDENCE_THRESHOLD}")
 print(f"   IOU_THRESHOLD: {IOU_THRESHOLD}")
 print(f"   PORT: {os.environ.get('PORT', '5000')}")
 
-# Cargar modelo en background
-def load_model_async():
-    """Cargar modelo de forma asíncrona"""
-    import threading
-    def load():
-        if load_model():
-            print("✅ Modelo cargado exitosamente")
-        else:
-            print("❌ Error: No se pudo cargar el modelo")
-    
-    thread = threading.Thread(target=load)
-    thread.daemon = True
-    thread.start()
-
-# Cargar modelo en background
-load_model_async()
-
-print("Aplicación iniciada - Modelo cargando en background")
+print("Aplicación iniciada - Lista para recibir requests")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

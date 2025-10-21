@@ -17,10 +17,10 @@ import time
 
 app = Flask(__name__)
 
-# Configuración
-MODEL_PATH = "modelo_entrenado/chaleco_detection/weights/best.pt"
-CONFIDENCE_THRESHOLD = 0.5
-IOU_THRESHOLD = 0.45
+# Configuración - Usar variables de Railway
+MODEL_PATH = os.environ.get('MODEL_PATH', 'modelo_entrenado/chaleco_detection/weights/best.pt')
+CONFIDENCE_THRESHOLD = float(os.environ.get('CONFIDENCE_THRESHOLD', '0.5'))
+IOU_THRESHOLD = float(os.environ.get('IOU_THRESHOLD', '0.45'))
 
 # Variables globales
 model = None
@@ -139,8 +139,22 @@ def detect():
 
 @app.route('/health')
 def health():
-    """Endpoint de salud para Railway - Simplificado"""
-    return "OK", 200
+    """Endpoint de salud para Railway"""
+    try:
+        # Verificar que la aplicación está funcionando
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': time.time(),
+            'model_loaded': model is not None,
+            'port': os.environ.get('PORT', '5000'),
+            'model_path': MODEL_PATH
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500
 
 @app.route('/')
 def index():
@@ -190,6 +204,11 @@ def model_info():
 
 # Iniciar aplicación sin bloquear por el modelo
 print("Iniciando aplicación...")
+print(f"🔧 Configuración:")
+print(f"   MODEL_PATH: {MODEL_PATH}")
+print(f"   CONFIDENCE_THRESHOLD: {CONFIDENCE_THRESHOLD}")
+print(f"   IOU_THRESHOLD: {IOU_THRESHOLD}")
+print(f"   PORT: {os.environ.get('PORT', '5000')}")
 
 # Cargar modelo en background
 def load_model_async():

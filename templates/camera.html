@@ -13,7 +13,7 @@
         }
         
         .container {
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
@@ -29,7 +29,6 @@
         .video-container {
             text-align: center;
             margin: 20px 0;
-            position: relative;
         }
         
         #videoElement {
@@ -37,17 +36,6 @@
             height: auto;
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        #canvasElement {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 100%;
-            height: auto;
-            border-radius: 10px;
-            pointer-events: none;
         }
         
         .controls {
@@ -71,18 +59,13 @@
             color: white;
         }
         
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-        
         .btn-danger {
             background: #dc3545;
             color: white;
         }
         
-        .btn-success {
-            background: #28a745;
+        .btn-secondary {
+            background: #6c757d;
             color: white;
         }
         
@@ -105,20 +88,23 @@
             border: 1px solid #f5c6cb;
         }
         
-        .detection-info {
-            background: #d1ecf1;
+        .stats {
+            background: #e9ecef;
             padding: 15px;
             border-radius: 5px;
             margin: 20px 0;
-            border: 1px solid #bee5eb;
+            text-align: center;
         }
         
-        .detection-results {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            border: 1px solid #dee2e6;
+        .stats h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .detection-count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
         }
     </style>
 </head>
@@ -128,44 +114,40 @@
         
         <div class="video-container">
             <video id="videoElement" autoplay muted playsinline></video>
-            <canvas id="canvasElement"></canvas>
         </div>
         
         <div id="status" class="status" style="display: none;"></div>
         
+        <div class="stats">
+            <h3>📊 Chalecos Detectados</h3>
+            <div class="detection-count" id="detectionCount">0</div>
+        </div>
+        
         <div class="controls">
             <button id="startBtn" class="btn btn-primary">📹 Iniciar Cámara</button>
-            <button id="detectBtn" class="btn btn-success" style="display: none;">🔍 Detectar Chalecos</button>
             <button id="stopBtn" class="btn btn-danger" style="display: none;">⏹️ Detener Cámara</button>
+            <button id="detectBtn" class="btn btn-primary" style="display: none;">🔍 Detectar Chalecos</button>
             <a href="/" class="btn btn-secondary">🏠 Volver al Inicio</a>
         </div>
         
-        <div class="detection-info">
+        <div style="background: #d1ecf1; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #bee5eb;">
             <h3 style="margin-top: 0; color: #0c5460;">ℹ️ Información</h3>
             <p style="color: #0c5460; margin: 0;">
                 <strong>Esta aplicación detecta chalecos de seguridad en tiempo real.</strong><br>
-                Haz clic en "Iniciar Cámara" y luego "Detectar Chalecos" para comenzar la detección.
+                Haz clic en "Iniciar Cámara" y permite el acceso cuando el navegador lo solicite.
             </p>
-        </div>
-        
-        <div id="detectionResults" class="detection-results" style="display: none;">
-            <h3>📊 Resultados de Detección</h3>
-            <div id="resultsContent"></div>
         </div>
     </div>
 
     <script>
         const videoElement = document.getElementById('videoElement');
-        const canvasElement = document.getElementById('canvasElement');
         const startBtn = document.getElementById('startBtn');
-        const detectBtn = document.getElementById('detectBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const detectBtn = document.getElementById('detectBtn');
         const statusDiv = document.getElementById('status');
-        const detectionResults = document.getElementById('detectionResults');
-        const resultsContent = document.getElementById('resultsContent');
-        
+        const detectionCount = document.getElementById('detectionCount');
         let stream = null;
-        let isDetecting = false;
+        let detectionInterval = null;
 
         function showStatus(message, type) {
             statusDiv.style.display = 'block';
@@ -177,7 +159,6 @@
             try {
                 showStatus('Solicitando acceso a la cámara...', 'success');
                 
-                // Solicitar acceso a la cámara
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 640 },
@@ -186,13 +167,12 @@
                     audio: false
                 });
                 
-                // Mostrar el stream en el video
                 videoElement.srcObject = stream;
                 
                 showStatus('✅ Cámara iniciada correctamente', 'success');
                 startBtn.style.display = 'none';
-                detectBtn.style.display = 'inline-block';
                 stopBtn.style.display = 'inline-block';
+                detectBtn.style.display = 'inline-block';
                 
             } catch (error) {
                 console.error('Error accediendo a la cámara:', error);
@@ -206,123 +186,73 @@
                 stream = null;
                 videoElement.srcObject = null;
                 
+                if (detectionInterval) {
+                    clearInterval(detectionInterval);
+                    detectionInterval = null;
+                }
+                
                 showStatus('Cámara detenida', 'success');
                 startBtn.style.display = 'inline-block';
-                detectBtn.style.display = 'none';
                 stopBtn.style.display = 'none';
-                detectionResults.style.display = 'none';
-                isDetecting = false;
+                detectBtn.style.display = 'none';
             }
         }
 
-        async function detectChalecos() {
-            if (isDetecting) return;
-            
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0);
+            return canvas.toDataURL('image/jpeg', 0.8);
+        }
+
+        async function detectVests() {
             try {
-                isDetecting = true;
-                detectBtn.textContent = '🔍 Detectando...';
-                detectBtn.disabled = true;
+                const imageData = captureFrame();
                 
-                showStatus('Capturando imagen y detectando chalecos...', 'success');
-                
-                // Capturar frame del video
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                ctx.drawImage(videoElement, 0, 0);
-                
-                // Convertir a base64
-                const imageData = canvas.toDataURL('image/jpeg');
-                
-                // Enviar al servidor para detección
                 const response = await fetch('/detect', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ image: imageData })
+                    body: JSON.stringify({
+                        image: imageData
+                    })
                 });
                 
-                const result = await response.json();
+                const data = await response.json();
                 
-                if (response.ok) {
-                    displayResults(result);
-                    drawDetections(canvas, result.detections);
+                if (data.success) {
+                    detectionCount.textContent = data.count;
+                    showStatus(`✅ Detectados ${data.count} chalecos`, 'success');
                 } else {
-                    showStatus('❌ Error en detección: ' + result.error, 'error');
+                    showStatus('❌ Error en detección: ' + data.error, 'error');
                 }
                 
             } catch (error) {
                 console.error('Error en detección:', error);
-                showStatus('❌ Error: ' + error.message, 'error');
-            } finally {
-                isDetecting = false;
+                showStatus('❌ Error al procesar detección', 'error');
+            }
+        }
+
+        function toggleDetection() {
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
                 detectBtn.textContent = '🔍 Detectar Chalecos';
-                detectBtn.disabled = false;
+                showStatus('Detección pausada', 'success');
+            } else {
+                detectionInterval = setInterval(detectVests, 2000); // Cada 2 segundos
+                detectBtn.textContent = '⏸️ Pausar Detección';
+                showStatus('Detección automática iniciada', 'success');
             }
-        }
-
-        function displayResults(result) {
-            detectionResults.style.display = 'block';
-            
-            let html = `
-                <p><strong>Chalecos detectados:</strong> ${result.count}</p>
-                <p><strong>¿Hay chalecos?</strong> ${result.has_vest ? '✅ Sí' : '❌ No'}</p>
-            `;
-            
-            if (result.detections.length > 0) {
-                html += '<h4>Detalles:</h4><ul>';
-                result.detections.forEach((det, index) => {
-                    html += `
-                        <li>
-                            <strong>Chaleco ${index + 1}:</strong> 
-                            Confianza: ${(det.confidence * 100).toFixed(1)}% | 
-                            Clase: ${det.class}
-                        </li>
-                    `;
-                });
-                html += '</ul>';
-            }
-            
-            resultsContent.innerHTML = html;
-        }
-
-        function drawDetections(canvas, detections) {
-            const ctx = canvasElement.getContext('2d');
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
-            
-            // Limpiar canvas
-            ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
-            // Dibujar detecciones
-            detections.forEach(detection => {
-                const [x1, y1, x2, y2] = detection.bbox;
-                const confidence = detection.confidence;
-                
-                // Dibujar rectángulo
-                ctx.strokeStyle = confidence > 0.7 ? '#00ff00' : '#ffff00';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-                
-                // Dibujar etiqueta
-                ctx.fillStyle = confidence > 0.7 ? '#00ff00' : '#ffff00';
-                ctx.fillRect(x1, y1 - 25, 200, 25);
-                
-                ctx.fillStyle = '#000000';
-                ctx.font = '16px Arial';
-                ctx.fillText(
-                    `${detection.class}: ${(confidence * 100).toFixed(1)}%`,
-                    x1 + 5, y1 - 5
-                );
-            });
         }
 
         // Event listeners
         startBtn.addEventListener('click', startCamera);
-        detectBtn.addEventListener('click', detectChalecos);
         stopBtn.addEventListener('click', stopCamera);
+        detectBtn.addEventListener('click', toggleDetection);
 
         // Detener la cámara cuando se cierra la página
         window.addEventListener('beforeunload', stopCamera);

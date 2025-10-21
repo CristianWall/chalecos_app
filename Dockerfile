@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar código de la aplicación
 COPY . .
 
+# Hacer ejecutable el script de inicio
+RUN chmod +x start.sh
+
 # Crear usuario no-root para seguridad
 RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
@@ -29,5 +32,5 @@ USER app
 # Exponer puerto
 EXPOSE 5000
 
-# Comando de inicio con variables de entorno
-CMD gunicorn app:app --bind 0.0.0.0:${PORT:-5000} --workers 1 --threads 4 --timeout 120 --access-logfile - --error-logfile -
+# Comando de inicio
+CMD ["./start.sh"]

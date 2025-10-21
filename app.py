@@ -191,24 +191,7 @@ def model_info():
 # Iniciar aplicación sin bloquear por el modelo
 print("Iniciando aplicación...")
 
-# Cargar modelo en background
-def load_model_async():
-    """Cargar modelo de forma asíncrona"""
-    import threading
-    def load():
-        if load_model():
-            print("✅ Modelo cargado exitosamente")
-        else:
-            print("❌ Error: No se pudo cargar el modelo")
-    
-    thread = threading.Thread(target=load)
-    thread.daemon = True
-    thread.start()
-
-# Cargar modelo en background
-load_model_async()
-
-print("Aplicación iniciada - Modelo cargando en background")
+print("Aplicación iniciada")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

@@ -137,12 +137,32 @@ def detect():
 @app.route('/health')
 def health():
     """Endpoint de salud para Railway"""
-    model_status = "loaded" if model is not None else "not_loaded"
-    return jsonify({
-        'status': 'healthy',
-        'model_status': model_status,
-        'timestamp': time.time()
-    })
+    try:
+        model_status = "loaded" if model is not None else "not_loaded"
+        return jsonify({
+            'status': 'healthy',
+            'model_status': model_status,
+            'timestamp': time.time()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500
+
+@app.route('/')
+def index():
+    """Página principal"""
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        return f"Error loading template: {str(e)}", 500
+
+@app.route('/ping')
+def ping():
+    """Endpoint simple de ping para healthcheck"""
+    return "pong", 200
 
 @app.route('/model_info')
 def model_info():

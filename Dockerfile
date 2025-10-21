@@ -29,5 +29,5 @@ USER app
 # Exponer puerto
 EXPOSE 5000
 
-# Comando de inicio
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--workers", "1", "--threads", "4", "--timeout", "120"]
+# Comando de inicio con variables de entorno
+CMD gunicorn app:app --bind 0.0.0.0:${PORT:-5000} --workers 1 --threads 4 --timeout 120 --access-logfile - --error-logfile -

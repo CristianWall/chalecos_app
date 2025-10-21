@@ -1,6 +1,6 @@
 # Fly.io configuration file
 app = "tu-app-chalecos"
-primary_region = "iad"
+primary_region = "lax"
 
 [build]
 

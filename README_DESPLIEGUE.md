@@ -21,17 +21,35 @@ Esta aplicación web permite detectar chalecos de seguridad en tiempo real usand
 ```
 despliegue/
 ├── app.py                 # Aplicación Flask principal
+├── app_simple.py          # Versión simplificada para Heroku
 ├── Procfile              # Configuración de Heroku
-├── requirements.txt      # Dependencias de Python
+├── requirements.txt       # Dependencias Python optimizadas (CPU-only)
+├── requirements-light.txt # Dependencias ligeras
 ├── runtime.txt           # Versión de Python
+├── Dockerfile            # Para despliegue con Docker
+├── fly.toml              # Configuración de Fly.io
+├── .dockerignore         # Archivos a excluir del Docker
 ├── .gitignore           # Archivos a ignorar en Git
+├── modelo_entrenado/      # Modelo YOLO entrenado
+│   └── chaleco_detection/
+│       └── weights/
+│           ├── best.pt   # Modelo principal
+│           └── last.pt   # Última versión
 ├── templates/
 │   └── index.html       # Interfaz web
-├── chaleco_detection/
-│   └── weights/
-│       └── best.pt      # Modelo YOLO entrenado
 └── README_DESPLIEGUE.md # Esta guía
 ```
+
+## ⚠️ Solución al Problema de Tamaño del Slug
+
+**Problema:** Heroku tiene un límite de 500MB para el slug compilado, pero ultralytics con PyTorch CUDA puede superar los 4GB.
+
+**Solución:** Usar versiones CPU-only de PyTorch y dependencias optimizadas.
+
+### 📦 Archivos de Requirements Disponibles:
+
+1. **`requirements.txt`** - Versión optimizada con PyTorch CPU-only (recomendada)
+2. **`requirements-light.txt`** - Versión ultra-ligera (sin ultralytics)
 
 ## 🚀 Pasos para Desplegar en Heroku
 
@@ -68,7 +86,11 @@ heroku login
 cd despliegue
 ```
 
-### 5. Inicializar Git (si no existe)
+### 5. Verificar Requirements Optimizados
+
+El archivo `requirements.txt` ya está optimizado con PyTorch CPU-only para evitar problemas de tamaño en Heroku.
+
+### 6. Inicializar Git (si no existe)
 
 ```bash
 git init

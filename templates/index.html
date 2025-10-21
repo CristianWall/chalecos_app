@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🔍 Detección de Chalecos de Seguridad</title>
+    <title>Detección de Chalecos - Tiempo Real</title>
     <style>
         * {
             margin: 0;
@@ -15,48 +15,39 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 20px;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        .main-content {
+        .container {
             background: white;
             border-radius: 20px;
-            padding: 30px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .camera-section {
+            text-align: center;
             margin-bottom: 30px;
         }
 
-        .video-container {
+        .camera-container {
             position: relative;
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
+            display: inline-block;
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
@@ -64,6 +55,7 @@
 
         #video {
             width: 100%;
+            max-width: 640px;
             height: auto;
             display: block;
         }
@@ -73,367 +65,406 @@
         }
 
         .controls {
-            text-align: center;
             margin: 20px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
-        .btn {
+        button {
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: bold;
+            padding: 12px 25px;
+            border-radius: 25px;
             cursor: pointer;
-            margin: 0 10px;
+            font-size: 16px;
+            font-weight: 600;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .btn:hover {
+        button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .btn:disabled {
+        button:disabled {
             background: #ccc;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        .btn.danger {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-        }
-
-        .btn.success {
-            background: linear-gradient(45deg, #00b894, #00a085);
-        }
-
         .status {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .status.detecting {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .status.vest-detected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.no-vest {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .detection-info {
             background: #f8f9fa;
             border-radius: 10px;
             padding: 20px;
-            margin: 20px 0;
-            border-left: 5px solid #667eea;
-        }
-
-        .detection-result {
-            background: #e8f5e8;
-            border-left-color: #00b894;
-            animation: pulse 2s infinite;
-        }
-
-        .detection-result.danger {
-            background: #ffeaea;
-            border-left-color: #ff6b6b;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.8; }
-            100% { opacity: 1; }
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
             margin-top: 20px;
         }
 
-        .info-card {
-            background: #f8f9fa;
+        .detection-info h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .detection-item {
+            background: white;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .info-card:hover {
-            border-color: #667eea;
-            transform: translateY(-5px);
-        }
-
-        .info-card h3 {
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
             color: #667eea;
-            margin-bottom: 10px;
         }
 
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #ffeaea;
-            color: #d63031;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border-left: 5px solid #d63031;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: white;
-            opacity: 0.8;
+        .stat-label {
+            color: #666;
+            margin-top: 5px;
         }
 
         @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
+            .container {
+                padding: 20px;
+                margin: 10px;
             }
             
-            .btn {
-                display: block;
-                width: 100%;
-                margin: 10px 0;
+            h1 {
+                font-size: 2em;
             }
             
-            .controls .btn {
-                display: inline-block;
-                width: auto;
-                margin: 5px;
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            button {
+                width: 200px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔍 Detección de Chalecos de Seguridad</h1>
-            <p>Detección en tiempo real usando inteligencia artificial</p>
-        </div>
-
-        <div class="main-content">
-            <div class="camera-section">
-                <div class="video-container">
-                    <video id="video" autoplay muted></video>
-                    <canvas id="canvas"></canvas>
-                </div>
-
-                <div class="controls">
-                    <button id="startBtn" class="btn">📹 Iniciar Cámara</button>
-                    <button id="captureBtn" class="btn" disabled>📸 Capturar y Detectar</button>
-                    <button id="stopBtn" class="btn danger" disabled>⏹️ Detener</button>
-                </div>
-
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <p>Procesando imagen...</p>
-                </div>
-            </div>
-
-            <div class="status" id="status">
-                <h3>📊 Estado del Sistema</h3>
-                <p id="statusText">Presiona "Iniciar Cámara" para comenzar</p>
-            </div>
-
-            <div class="status detection-result" id="detectionResult" style="display: none;">
-                <h3>🎯 Resultado de Detección</h3>
-                <div id="detectionText">Esperando detección...</div>
-                <div id="confidenceText"></div>
-            </div>
-
-            <div class="info-grid">
-                <div class="info-card">
-                    <h3>🔧 Tecnología</h3>
-                    <p>YOLO v8 + Flask + Heroku</p>
-                </div>
-                <div class="info-card">
-                    <h3>🎯 Precisión</h3>
-                    <p>Modelo entrenado específicamente para chalecos</p>
-                </div>
-                <div class="info-card">
-                    <h3>⚡ Velocidad</h3>
-                    <p>Detección en tiempo real</p>
-                </div>
-                <div class="info-card">
-                    <h3>🌐 Acceso</h3>
-                    <p>Disponible desde cualquier dispositivo</p>
-                </div>
+        <h1>🔍 Detección de Chalecos</h1>
+        
+        <div class="camera-section">
+            <div class="camera-container">
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="canvas"></canvas>
             </div>
         </div>
 
-        <div class="footer">
-            <p>Desarrollado con ❤️ para la seguridad laboral</p>
+        <div class="controls">
+            <button id="startBtn">Iniciar Cámara</button>
+            <button id="detectBtn" disabled>Detectar Chalecos</button>
+            <button id="stopBtn" disabled>Detener</button>
+        </div>
+
+        <div id="status" class="status" style="display: none;">
+            Estado: Listo
+        </div>
+
+        <div id="detectionInfo" class="detection-info" style="display: none;">
+            <h3>Información de Detección</h3>
+            <div id="detectionsList"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalDetections">0</div>
+                <div class="stat-label">Detecciones</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="vestDetections">0</div>
+                <div class="stat-label">Con Chaleco</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="noVestDetections">0</div>
+                <div class="stat-label">Sin Chaleco</div>
+            </div>
         </div>
     </div>
 
     <script>
-        let video = document.getElementById('video');
-        let canvas = document.getElementById('canvas');
-        let ctx = canvas.getContext('2d');
-        let stream = null;
-
-        const startBtn = document.getElementById('startBtn');
-        const captureBtn = document.getElementById('captureBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const statusDiv = document.getElementById('status');
-        const statusText = document.getElementById('statusText');
-        const detectionResult = document.getElementById('detectionResult');
-        const detectionText = document.getElementById('detectionText');
-        const confidenceText = document.getElementById('confidenceText');
-        const loading = document.getElementById('loading');
-
-        startBtn.addEventListener('click', startCamera);
-        captureBtn.addEventListener('click', captureAndDetect);
-        stopBtn.addEventListener('click', stopCamera);
-
-        async function startCamera() {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: 'user'
-                    } 
-                });
+        class ChalecoDetector {
+            constructor() {
+                this.video = document.getElementById('video');
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
                 
-                video.srcObject = stream;
+                this.startBtn = document.getElementById('startBtn');
+                this.detectBtn = document.getElementById('detectBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.status = document.getElementById('status');
+                this.detectionInfo = document.getElementById('detectionInfo');
+                this.detectionsList = document.getElementById('detectionsList');
                 
-                startBtn.disabled = true;
-                captureBtn.disabled = false;
-                stopBtn.disabled = false;
+                this.stream = null;
+                this.isDetecting = false;
+                this.detectionInterval = null;
+                this.stats = {
+                    total: 0,
+                    vest: 0,
+                    noVest: 0
+                };
                 
-                statusText.textContent = 'Cámara activa - Lista para detectar chalecos';
-                statusDiv.className = 'status detection-result';
-                
-            } catch (error) {
-                console.error('Error al acceder a la cámara:', error);
-                statusText.textContent = 'Error: No se pudo acceder a la cámara';
-                statusDiv.className = 'status detection-result danger';
-            }
-        }
-
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
+                this.initEventListeners();
             }
             
-            video.srcObject = null;
-            
-            startBtn.disabled = false;
-            captureBtn.disabled = true;
-            stopBtn.disabled = true;
-            
-            statusText.textContent = 'Cámara detenida';
-            statusDiv.className = 'status';
-            detectionResult.style.display = 'none';
-        }
-
-        async function captureAndDetect() {
-            if (!stream) return;
-
-            loading.style.display = 'block';
-            captureBtn.disabled = true;
-
-            try {
-                // Capturar frame actual
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                ctx.drawImage(video, 0, 0);
-
-                // Convertir a base64
-                const imageData = canvas.toDataURL('image/jpeg', 0.8);
-
-                // Enviar para detección
-                const response = await fetch('/detect', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ image: imageData })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    displayDetectionResult(result);
-                } else {
-                    throw new Error(result.error || 'Error en la detección');
-                }
-
-            } catch (error) {
-                console.error('Error:', error);
-                detectionResult.innerHTML = `
-                    <h3>❌ Error</h3>
-                    <div class="error">Error en la detección: ${error.message}</div>
-                `;
-                detectionResult.className = 'status detection-result danger';
-                detectionResult.style.display = 'block';
+            initEventListeners() {
+                this.startBtn.addEventListener('click', () => this.startCamera());
+                this.detectBtn.addEventListener('click', () => this.startDetection());
+                this.stopBtn.addEventListener('click', () => this.stopDetection());
             }
-
-            loading.style.display = 'none';
-            captureBtn.disabled = false;
-        }
-
-        function displayDetectionResult(result) {
-            const detections = result.detections;
             
-            if (detections.length === 0) {
-                detectionText.innerHTML = '<strong>No se detectaron chalecos</strong>';
-                detectionResult.className = 'status detection-result';
-            } else {
-                let resultHtml = '<strong>Detecciones encontradas:</strong><br>';
-                let hasChaleco = false;
-                
-                detections.forEach(detection => {
-                    const confidence = (detection.confidence * 100).toFixed(1);
-                    resultHtml += `• ${detection.class}: ${confidence}%<br>`;
+            async startCamera() {
+                try {
+                    this.showStatus('Iniciando cámara...', 'detecting');
                     
-                    if (detection.class === 'con_chaleco') {
-                        hasChaleco = true;
-                    }
-                });
-                
-                detectionText.innerHTML = resultHtml;
-                detectionResult.className = hasChaleco ? 
-                    'status detection-result' : 
-                    'status detection-result danger';
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 },
+                            facingMode: 'user'
+                        }
+                    });
+                    
+                    this.video.srcObject = this.stream;
+                    
+                    this.video.onloadedmetadata = () => {
+                        this.canvas.width = this.video.videoWidth;
+                        this.canvas.height = this.video.videoHeight;
+                        this.showStatus('Cámara iniciada', 'detecting');
+                        this.startBtn.disabled = true;
+                        this.detectBtn.disabled = false;
+                        this.stopBtn.disabled = false;
+                    };
+                    
+                } catch (error) {
+                    console.error('Error accediendo a la cámara:', error);
+                    this.showStatus('Error: No se pudo acceder a la cámara', 'error');
+                }
             }
             
-            detectionResult.style.display = 'block';
-        }
-
-        // Verificar estado del servidor al cargar la página
-        window.addEventListener('load', async () => {
-            try {
-                const response = await fetch('/health');
-                const health = await response.json();
+            startDetection() {
+                if (this.isDetecting) return;
                 
-                if (health.model_loaded) {
-                    statusText.textContent = 'Sistema listo - Modelo cargado correctamente';
-                    statusDiv.className = 'status detection-result';
-                } else {
-                    statusText.textContent = 'Sistema iniciado - Modelo no disponible';
-                    statusDiv.className = 'status';
-                }
-            } catch (error) {
-                statusText.textContent = 'Error de conexión con el servidor';
-                statusDiv.className = 'status detection-result danger';
+                this.isDetecting = true;
+                this.detectBtn.disabled = true;
+                this.showStatus('Detectando...', 'detecting');
+                
+                // Detectar cada 2 segundos
+                this.detectionInterval = setInterval(() => {
+                    this.detectFrame();
+                }, 2000);
+                
+                // Primera detección inmediata
+                this.detectFrame();
             }
+            
+            stopDetection() {
+                if (!this.isDetecting) return;
+                
+                this.isDetecting = false;
+                this.detectBtn.disabled = false;
+                
+                if (this.detectionInterval) {
+                    clearInterval(this.detectionInterval);
+                    this.detectionInterval = null;
+                }
+                
+                this.showStatus('Detección detenida', 'detecting');
+            }
+            
+            async detectFrame() {
+                if (!this.isDetecting || this.video.videoWidth === 0) return;
+                
+                try {
+                    // Capturar frame
+                    this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+                    const imageData = this.canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Enviar para detección
+                    const response = await fetch('/detect', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ image: imageData })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    this.handleDetectionResult(result);
+                    
+                } catch (error) {
+                    console.error('Error en detección:', error);
+                    this.showStatus('Error en detección', 'error');
+                }
+            }
+            
+            handleDetectionResult(result) {
+                this.stats.total++;
+                
+                if (result.error) {
+                    this.showStatus(`Error: ${result.error}`, 'error');
+                    return;
+                }
+                
+                const detections = result.detections || [];
+                const hasVest = result.has_vest || false;
+                
+                // Actualizar estadísticas
+                if (detections.length > 0) {
+                    const vestDetections = detections.filter(d => d.class === 'con_chaleco');
+                    const noVestDetections = detections.filter(d => d.class === 'sin_chaleco');
+                    
+                    this.stats.vest += vestDetections.length;
+                    this.stats.noVest += noVestDetections.length;
+                }
+                
+                // Actualizar UI
+                this.updateStats();
+                this.updateDetectionInfo(detections);
+                
+                // Mostrar estado
+                if (hasVest) {
+                    this.showStatus('✅ Chaleco detectado', 'vest-detected');
+                } else if (detections.length > 0) {
+                    this.showStatus('❌ Sin chaleco detectado', 'no-vest');
+                } else {
+                    this.showStatus('🔍 No se detectaron objetos', 'detecting');
+                }
+            }
+            
+            updateStats() {
+                document.getElementById('totalDetections').textContent = this.stats.total;
+                document.getElementById('vestDetections').textContent = this.stats.vest;
+                document.getElementById('noVestDetections').textContent = this.stats.noVest;
+            }
+            
+            updateDetectionInfo(detections) {
+                if (detections.length === 0) {
+                    this.detectionInfo.style.display = 'none';
+                    return;
+                }
+                
+                this.detectionInfo.style.display = 'block';
+                this.detectionsList.innerHTML = '';
+                
+                detections.forEach((detection, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'detection-item';
+                    
+                    const confidence = Math.round(detection.confidence * 100);
+                    const className = detection.class === 'con_chaleco' ? 'Con Chaleco' : 'Sin Chaleco';
+                    
+                    item.innerHTML = `
+                        <strong>${className}</strong> (${confidence}%)
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidence}%"></div>
+                        </div>
+                    `;
+                    
+                    this.detectionsList.appendChild(item);
+                });
+            }
+            
+            showStatus(message, type) {
+                this.status.textContent = message;
+                this.status.className = `status ${type}`;
+                this.status.style.display = 'block';
+            }
+            
+            cleanup() {
+                if (this.detectionInterval) {
+                    clearInterval(this.detectionInterval);
+                }
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                }
+            }
+        }
+        
+        // Inicializar detector
+        const detector = new ChalecoDetector();
+        
+        // Limpiar al cerrar la página
+        window.addEventListener('beforeunload', () => {
+            detector.cleanup();
         });
     </script>
 </body>

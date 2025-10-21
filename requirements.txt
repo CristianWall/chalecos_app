@@ -1,9 +1,23 @@
+# Aplicación Flask para detección de chalecos
+# Optimizado para Railway con límite de 4GB
+
+# Framework web
 Flask==2.3.3
-opencv-python-headless==4.8.0.76
-Pillow==10.0.0
-numpy>=1.24.0,<2.0.0
 gunicorn==21.2.0
-PyYAML==6.0.1
-torch>=2.2.0,<3.0.0
-torchvision>=0.17.0,<1.0.0
-ultralytics>=8.0.0
+
+# Procesamiento de imágenes y visión por computadora
+ultralytics==8.0.196
+opencv-python-headless==4.8.1.78
+Pillow==10.0.1
+
+# Procesamiento de datos
+numpy==1.24.3
+torch==2.0.1
+torchvision==0.15.2
+
+# Utilidades
+requests==2.31.0
+python-dotenv==1.0.0
+
+# Optimizaciones para Railway
+psutil==5.9.5

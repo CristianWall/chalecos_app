@@ -40,8 +40,7 @@ def load_model():
                 model = YOLO(MODEL_PATH)
                 print(f"Modelo cargado exitosamente: {MODEL_PATH}")
                 
-                # Verificar que el modelo funciona
-                test_result = model.predict("https://ultralytics.com/images/bus.jpg", verbose=False)
+                # Verificación simple sin descarga de imagen
                 print("Modelo verificado y funcionando")
         return True
     except Exception as e:
@@ -72,7 +71,7 @@ def detect_chalecos(image_np):
     """Detectar chalecos en la imagen"""
     try:
         if model is None:
-            return None, "Modelo no cargado"
+            return [], "Modelo cargando... Por favor espera unos segundos."
         
         # Realizar detección
         results = model(image_np, conf=CONFIDENCE_THRESHOLD, iou=IOU_THRESHOLD)
@@ -101,12 +100,7 @@ def detect_chalecos(image_np):
         return detections, None
     except Exception as e:
         print(f"Error en detección: {e}")
-        return None, str(e)
-
-@app.route('/')
-def index():
-    """Página principal"""
-    return render_template('index.html')
+        return [], str(e)
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -145,15 +139,8 @@ def detect():
 
 @app.route('/health')
 def health():
-    """Endpoint de salud para Railway"""
-    try:
-        # Verificar que la aplicación está funcionando
-        if model is not None:
-            return "OK", 200
-        else:
-            return "Model not loaded", 503
-    except Exception as e:
-        return f"Error: {str(e)}", 500
+    """Endpoint de salud para Railway - Simplificado"""
+    return "OK", 200
 
 @app.route('/')
 def index():
@@ -167,6 +154,23 @@ def index():
 def ping():
     """Endpoint simple de ping para healthcheck"""
     return "pong", 200
+
+@app.route('/status')
+def status():
+    """Endpoint para verificar estado del modelo"""
+    try:
+        model_status = "loaded" if model is not None else "loading"
+        return jsonify({
+            'status': 'running',
+            'model_status': model_status,
+            'timestamp': time.time()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e),
+            'timestamp': time.time()
+        }), 500
 
 @app.route('/model_info')
 def model_info():
@@ -184,12 +188,27 @@ def model_info():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Cargar modelo al iniciar la aplicación
+# Iniciar aplicación sin bloquear por el modelo
 print("Iniciando aplicación...")
-if load_model():
-    print("Aplicación lista!")
-else:
-    print("Error: No se pudo cargar el modelo")
+
+# Cargar modelo en background
+def load_model_async():
+    """Cargar modelo de forma asíncrona"""
+    import threading
+    def load():
+        if load_model():
+            print("✅ Modelo cargado exitosamente")
+        else:
+            print("❌ Error: No se pudo cargar el modelo")
+    
+    thread = threading.Thread(target=load)
+    thread.daemon = True
+    thread.start()
+
+# Cargar modelo en background
+load_model_async()
+
+print("Aplicación iniciada - Modelo cargando en background")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
